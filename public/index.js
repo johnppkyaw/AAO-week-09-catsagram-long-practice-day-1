@@ -14,14 +14,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     h1.style.padding = "20px";
 
-    setAttributesToTheElements();
+    reloadData();
+
+    await setAttributesToTheElements();
 
     addEventListenerToTheButtons();
 
     appendChildToTheParents();
-
   }
-
   loadCat();
 
   //Helper functions
@@ -47,7 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //Sets attributes to the elements
   async function setAttributesToTheElements() {
-    img.setAttribute('src', await getCatPic());
+    if (!img.src) {
+      img.setAttribute('src', await getCatPic());
+    };
     popularityScore.setAttribute("id", "score");
     newPic.setAttribute("id", "new-image");
     divClicks.setAttribute("id", "vote");
@@ -58,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     commentField.setAttribute("id", "comment");
     commentField.setAttribute("placeholder", "Add a comment...");
     commentDisplay.setAttribute("id", "comment-display");
+    storeData(img.src, popularityScore.textContent, commentDisplay.innerHTML);
   }
 
   //Gets url of the random cat picture from the cat API
@@ -73,9 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //Gets new cat images and resets popularity score and comments from previous the cat image
   async function getNewImage(e) {
+    e.preventDefault();
+    localStorage.clear();
     img.setAttribute('src', await getCatPic());
     popularityScore.textContent = "Popularity Score: 0";
     commentDisplay.textContent = "";
+    storeData(img.src, popularityScore.textContent, commentDisplay.innerHTML);
   }
 
   //Add Event listeners to the buttons
@@ -104,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //Changes the popularity score based on Upvote and Downvote button
   function changeScore(e) {
+    e.preventDefault();
     let currScore = Number(popularityScore.textContent.split(": ")[1]);
     if (e.target.textContent === "Upvote") {
       currScore++;
@@ -111,16 +118,36 @@ document.addEventListener("DOMContentLoaded", () => {
       currScore--; //It won't go below 0;
     }
     popularityScore.textContent = `Popularity Score: ${currScore}`;
+    storeData(img.src, popularityScore.textContent, commentDisplay.innerHTML);
   }
 
   //Adds comment submitted;
   function addComment(e) {
+    e.preventDefault();
     const comment = commentField.value;
     if (comment) {
       const commentDiv = document.createElement('div');
       commentDiv.textContent = comment;
       commentDisplay.appendChild(commentDiv);
       commentField.value = "";
+    }
+    storeData(img.src, popularityScore.textContent, commentDisplay.innerHTML);
+  }
+
+  //Stores current score, image, and comments
+  function storeData(...elements) {
+    ["catImage", "score", "comments"].forEach((key, index) => {
+      localStorage.setItem(key, elements[index]);
+    })
+  }
+
+  //Loads any existing saved storage upon refreshing or reopening of the browser
+  function reloadData() {
+    const imageSaved = localStorage.getItem("catImage");
+    if (imageSaved) {
+      img.src = localStorage.getItem("catImage");
+      popularityScore.textContent = localStorage.getItem("score");
+      commentDisplay.innerHTML = localStorage.getItem("comments");
     }
   }
 });
